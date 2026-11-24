@@ -1,7 +1,6 @@
 import pygame
 import neat
 import os
-import sys
 import time
 import random
 
@@ -10,32 +9,17 @@ pygame.font.init()
 
 gen = 0
 
-# folder of this script, so the game also runs when started from another directory
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-IMG_DIR = os.path.join(BASE_DIR, "imgs")
-
-# The sprites are not stored in the repository. Fail with a clear message
-# instead of a pygame traceback (see make_placeholder_imgs.py).
-_NEEDED = ["bird1.png", "bird2.png", "bird3.png", "pipe.png", "bg.png", "base.png"]
-_missing = [f for f in _NEEDED if not os.path.isfile(os.path.join(IMG_DIR, f))]
-if _missing:
-    sys.exit("Missing image files in " + IMG_DIR + ": " + ", ".join(_missing) +
-             "\nPut the sprites there, or run: python make_placeholder_imgs.py")
-
 # loading ui image elements
-BIRD_IMG = [pygame.transform.scale2x(pygame.image.load(os.path.join(IMG_DIR,"bird1.png"))),pygame.transform.scale2x(pygame.image.load(os.path.join(IMG_DIR,"bird2.png"))),pygame.transform.scale2x(pygame.image.load(os.path.join(IMG_DIR,"bird3.png")))]
-PIPE_IMG = pygame.transform.scale2x(pygame.image.load(os.path.join(IMG_DIR,"pipe.png")))
-BG_IMG = pygame.transform.scale2x(pygame.image.load(os.path.join(IMG_DIR,"bg.png")))
-BASE_IMG = pygame.transform.scale2x(pygame.image.load(os.path.join(IMG_DIR,"base.png")))
+BIRD_IMG = [pygame.transform.scale2x(pygame.image.load(os.path.join("imgs","bird1.png"))),pygame.transform.scale2x(pygame.image.load(os.path.join("imgs","bird2.png"))),pygame.transform.scale2x(pygame.image.load(os.path.join("imgs","bird3.png")))]
+PIPE_IMG = pygame.transform.scale2x(pygame.image.load(os.path.join("imgs","pipe.png")))
+BG_IMG = pygame.transform.scale2x(pygame.image.load(os.path.join("imgs","bg.png")))
+BASE_IMG = pygame.transform.scale2x(pygame.image.load(os.path.join("imgs","base.png")))
 
 STAT_FONT = pygame.font.SysFont("comicsans",50)
 
 # window height
 WIN_WIDTH = BG_IMG.get_width() -100
 WIN_HEIGHT = 650
-
-# x position of every bird (they only move up and down)
-BIRD_X = 200
 
 
 class Bird:
@@ -274,7 +258,7 @@ def main(genomes, config):
     for _,g in genomes:
         net = neat.nn.FeedForwardNetwork.create(g,config)
         nets.append(net)
-        birds.append(Bird(BIRD_X,310))
+        birds.append(Bird(200,310))
 
         # start with fitness level of 0
         g.fitness = 0 
@@ -330,17 +314,15 @@ def main(genomes, config):
             pipe.move()
 
             # checking for collision
-            # (walk backwards: popping while walking forwards skips the next bird)
-            for x in range(len(birds) - 1, -1, -1):
-                if pipe.collide(birds[x],win):
+            for x, bird in enumerate(birds):
+                if pipe.collide(bird,win):
                     ge[x].fitness -= 1
                     birds.pop(x)
                     nets.pop(x)
                     ge.pop(x)
 
             # set pipe flag as passed
-            # (BIRD_X rather than the leftover loop variable `bird`)
-            if not pipe.passed and pipe.x < BIRD_X:
+            if not pipe.passed and pipe.x < bird.x:
                 pipe.passed = True
                 add_pipe = True
 
@@ -368,8 +350,8 @@ def main(genomes, config):
 
         # checking if bird hit floor,
         # if hit then remove that bird        
-        for x in range(len(birds) - 1, -1, -1):
-            if birds[x].y + birds[x].img.get_height() >= 730:
+        for x, bird in enumerate(birds):
+            if bird.y + bird.img.get_height() >= 730:
                 birds.pop(x)
                 nets.pop(x)
                 ge.pop(x)
@@ -410,5 +392,6 @@ def run(config_path):
 
 if __name__ == "__main__":
     # finding config path location, by finding local working dir
-    config_path = os.path.join(BASE_DIR,'config.txt')
+    local_dir = os.path.dirname(__file__)
+    config_path = os.path.join(local_dir,'config.txt')
     run(config_path)
